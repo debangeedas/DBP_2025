@@ -62,8 +62,7 @@ python -m cli.cli show-block 1
 ### View Balances
 Display the current balance of all accounts.
 
-Show the current balance of all users.
-
+**Usage:**
 ```bash
 python -m cli.cli show-balances
 ```
