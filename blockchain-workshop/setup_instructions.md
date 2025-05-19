@@ -63,6 +63,13 @@
    python -m cli.cli --help
    ```
 
+## How it works
+
+- The blockchain automatically creates a new block after every 3 transactions
+- New users are automatically created with a starting balance of $100.00
+- All data is stored in memory and will be lost when the server is stopped
+- The genesis block is created automatically when the blockchain is initialized
+
 ## Troubleshooting
 
 - If you get a "port already in use" error, you can change the port in `server/server.py` by modifying the `run_server()` function call at the bottom of the file.
