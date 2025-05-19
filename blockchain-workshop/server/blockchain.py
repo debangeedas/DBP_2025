@@ -31,15 +31,48 @@ class Blockchain:
         self.invalid_transactions = []
         print("Blockchain reset complete: All transactions, balances, and history have been cleared.")
 
+    def create_user(self, username: str) -> bool:
+        """Explicitly create a new user with a starting balance of $100"""
+        if not username or not isinstance(username, str):
+            print("Error: Username must be a non-empty string")
+            return False
+            
+        if username in self.balances:
+            print(f"Error: User '{username}' already exists")
+            return False
+            
+        self.balances[username] = 100.0
+        print(f"New user '{username}' created with starting balance of $100.00")
+        return True
+        
     def add_transaction(self, source: str, recipient: str, amount: float) -> bool:
         """Add a new transaction to the pending transactions list"""
-        # Initialize balances for new users
+        # Check if users exist
+        transaction = Transaction(source, recipient, amount)
+        
         if source not in self.balances:
-            self.balances[source] = 100.0  # Starting balance for new source
-            print(f"New user '{source}' added with starting balance of $100.00")
+            transaction.is_valid = False
+            transaction.validation_error = f"Source user '{source}' does not exist"
+            self.invalid_transactions.append(transaction)
+            print(f"\n=== INVALID TRANSACTION ===")
+            print(f"From: {source}")
+            print(f"To: {recipient}")
+            print(f"Amount: ${amount:.2f}")
+            print(f"Error: {transaction.validation_error}")
+            print("===========================\n")
+            return False
+            
         if recipient not in self.balances:
-            self.balances[recipient] = 0.0  # Starting balance for new recipient
-            print(f"New user '{recipient}' added with starting balance of $0.00")
+            transaction.is_valid = False
+            transaction.validation_error = f"Recipient user '{recipient}' does not exist"
+            self.invalid_transactions.append(transaction)
+            print(f"\n=== INVALID TRANSACTION ===")
+            print(f"From: {source}")
+            print(f"To: {recipient}")
+            print(f"Amount: ${amount:.2f}")
+            print(f"Error: {transaction.validation_error}")
+            print("===========================\n")
+            return False
 
         transaction = Transaction(source, recipient, amount)
         
@@ -140,7 +173,30 @@ class Blockchain:
             return self.chain[index - 1]
         return None
 
-    def export_transactions_to_csv(self, filepath: str) -> bool:
-        """This method is kept for compatibility but does nothing"""
-        print("Export functionality has been removed")
-        return False
+    def export_blockchain(self, filepath: str) -> bool:
+        """Export complete blockchain data to a JSON file"""
+        try:
+            current_time = datetime.utcnow().isoformat()
+            blockchain_data = {
+                'timestamp': current_time,
+                'chain': self.chain,
+                'pending_transactions': [tx.to_dict() for tx in self.pending_transactions],
+                'invalid_transactions': [tx.to_dict() for tx in self.invalid_transactions],
+                'balances': self.balances,
+                'stats': {
+                    'block_count': len(self.chain),
+                    'transaction_count': sum(len(block.get('transactions', [])) for block in self.chain),
+                    'user_count': len(self.balances),
+                    'pending_transaction_count': len(self.pending_transactions),
+                    'invalid_transaction_count': len(self.invalid_transactions)
+                }
+            }
+            
+            with open(filepath, 'w') as f:
+                json.dump(blockchain_data, f, indent=2)
+                
+            print(f"Blockchain data successfully exported to {filepath}")
+            return True
+        except Exception as e:
+            print(f"Failed to export blockchain data: {str(e)}")
+            return False

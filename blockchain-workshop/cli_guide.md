@@ -6,14 +6,18 @@ The Blockchain CLI provides a command-line interface to interact with the blockc
 ## User Management
 
 ### Creating New Users
-New users are automatically created when they first appear in a transaction:
-- **As a sender**: New users start with a balance of **$100.00**
-- **As a recipient**: New users start with a balance of **$0.00**
+Users must be explicitly created before they can participate in transactions. Each new user starts with a balance of **$100.00**.
+
+**Usage:**
+```bash
+python -m cli.cli create-user <username>
+```
 
 **Example:**
 ```bash
-# This will create 'Alice' with $100 and 'Bob' with $0 if they don't exist
-python -m cli.cli add-transaction Alice Bob 10.0
+# Create users named 'alice' and 'bob'
+python -m cli.cli create-user alice
+python -m cli.cli create-user bob
 ```
 
 ### Viewing User Balances
@@ -22,10 +26,20 @@ Check the current balance of all users:
 python -m cli.cli show-balances
 ```
 
+Output example:
+```
+========================================
+💰 USER BALANCES
+========================================
+🟢 alice    $100.00
+🟢 bob      $100.00
+========================================
+```
+
 ## Transaction Commands {#transaction-commands}
 
 ### Add a Transaction
-Add a new transaction to the blockchain.
+Add a new transaction to the blockchain. Both the sender and recipient must exist.
 
 **Usage:**
 ```bash
@@ -34,9 +48,11 @@ python -m cli.cli add-transaction <source> <recipient> <amount>
 
 **Example:**
 ```bash
-# Send 10.0 from Alice to Bob
-python -m cli.cli add-transaction Alice Bob 10.0
+# Send 10.0 from alice to bob
+python -m cli.cli add-transaction alice bob 10.0
 ```
+
+**Note:** If either the source or recipient user doesn't exist, the transaction will fail and be logged as an invalid transaction.
 
 ### View the Blockchain
 Display the entire blockchain with all transactions.
@@ -75,36 +91,78 @@ Show transactions that are pending and not yet in a block.
 python -m cli.cli show-pending
 ```
 
+### View Invalid Transactions
+
+Show all transactions that failed validation with their error messages.
+
+```bash
+python -m cli.cli show-invalid
+```
+
+### Export Blockchain Data
+
+Export the entire blockchain data (blocks, transactions, balances) to a JSON file.
+
+**Usage:**
+```bash
+python -m cli.cli export <filepath>
+```
+
+**Example:**
+```bash
+python -m cli.cli export blockchain_export.json
+```
+
+The export includes:
+- Complete blockchain with all blocks and transactions
+- Current user balances
+- Pending transactions
+- Invalid transactions
+- Blockchain statistics
+
 ## Examples
 
-1. **Create a simple transaction flow**:
+1. **Complete transaction flow**:
    ```bash
-      
+   # Create users first
+   python -m cli.cli create-user alice
+   python -m cli.cli create-user bob
+   python -m cli.cli create-user charlie
+   
+   # Check initial balances
+   python -m cli.cli show-balances
+   
    # Add some transactions
-   python -m cli.cli add-transaction Alice Bob 10.0
-   python -m cli.cli add-transaction Bob Charlie 5.0
+   python -m cli.cli add-transaction alice bob 10.0
+   python -m cli.cli add-transaction bob charlie 5.0
    
    # View the blockchain
    python -m cli.cli show-chain
 
    # View a specific block (1-indexed)
-   python -m cli.cli show-block 1
+   python -m cli.cli show-block 2
    
-   # Check balances
+   # Check updated balances
    python -m cli.cli show-balances
    
    # View pending transactions
    python -m cli.cli show-pending
 
-   # View invalid transactions
-   python -m cli.cli show-invalid
-
-   # Reset the blockchain
-   python -m cli.cli reset
+   # Export blockchain data
+   python -m cli.cli export blockchain_data.json
    ```
 
-2. **Handle insufficient funds**:
+2. **Error handling examples**:
    ```bash
-   # This will fail if Alice doesn't have enough balance
-   python -m cli.cli add-transaction Alice Bob 1000.0
+   # Non-existent user transaction (will fail and appear in invalid transactions)
+   python -m cli.cli add-transaction alice dave 10.0
+   
+   # Insufficient funds transaction
+   python -m cli.cli add-transaction alice bob 1000.0
+   
+   # View invalid transactions
+   python -m cli.cli show-invalid
+   
+   # Reset the blockchain
+   python -m cli.cli reset
    ```

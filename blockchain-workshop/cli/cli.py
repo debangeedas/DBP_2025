@@ -10,6 +10,7 @@ class BlockchainCLI:
     def add_transaction(self, source: str, recipient: str, amount: float) -> bool:
         """Add a new transaction to the blockchain"""
         try:
+            print(f"Attempting transaction: {source} -> {recipient} for ${amount:.2f}")
             response = requests.post(
                 f"{self.server_url}/transactions/new",
                 json={
@@ -18,9 +19,44 @@ class BlockchainCLI:
                     'amount': amount
                 }
             )
-            return response.status_code == 201
+            
+            if response.status_code == 201:
+                print(f"✓ SUCCESS: Transaction added successfully")
+                return True
+            else:
+                try:
+                    # Try to parse as JSON for detailed error
+                    error_data = response.json()
+                    error_msg = f"✗ FAILED: {error_data.get('error', 'Unknown error')}"
+                    
+                    if 'reason' in error_data:
+                        error_msg += f"\n   Reason: {error_data['reason']}"
+                        
+                        # Add helpful hints based on error type
+                        if "user 'alice' does not exist" in error_data['reason']:
+                            error_msg += f"\n   Hint: Create user 'alice' with 'create-user alice'"
+                        elif "user 'Charlie' does not exist" in error_data['reason']:
+                            error_msg += f"\n   Hint: Create user 'Charlie' with 'create-user Charlie'"
+                        elif "does not exist" in error_data['reason']:
+                            # Extract username from error message
+                            import re
+                            match = re.search(r"'([^']+)' does not exist", error_data['reason'])
+                            if match:
+                                username = match.group(1)
+                                error_msg += f"\n   Hint: Create user '{username}' with 'create-user {username}'"
+                    
+                    print(error_msg)
+                except ValueError:
+                    # Fallback for non-JSON responses
+                    print(f"✗ FAILED: {response.text}")
+                    
+                return False
+                
         except requests.exceptions.ConnectionError:
-            print("Error: Could not connect to the server. Make sure it's running.")
+            print("✗ ERROR: Could not connect to the server. Make sure it's running.")
+            return False
+        except Exception as e:
+            print(f"✗ ERROR: An unexpected error occurred: {str(e)}")
             return False
 
     def print_chain(self) -> Optional[dict]:
@@ -78,10 +114,51 @@ class BlockchainCLI:
             print("Error: Could not connect to the server. Make sure it's running.")
             return False
 
-    def export_transactions(self, filepath: str) -> bool:
-        """This method is kept for compatibility but does nothing"""
-        print("Export functionality has been removed")
-        return False
+    def export_blockchain(self, filepath: str) -> bool:
+        """Export complete blockchain data to a JSON file"""
+        try:
+            print(f"Exporting blockchain data to {filepath}...")
+            response = requests.post(
+                f"{self.server_url}/export",
+                json={'filepath': filepath}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"✓ SUCCESS: {data.get('message', 'Export successful')}")
+                print(f"Exported to: {data.get('filepath', filepath)}")
+                return True
+            else:
+                try:
+                    error_data = response.json()
+                    print(f"✗ FAILED: {error_data.get('error', 'Unknown error')}")
+                except ValueError:
+                    print(f"✗ FAILED: {response.text}")
+                return False
+                
+        except requests.exceptions.ConnectionError:
+            print("✗ ERROR: Could not connect to the server. Make sure it's running.")
+            return False
+        except Exception as e:
+            print(f"✗ ERROR: An unexpected error occurred: {str(e)}")
+            return False
+        
+    def create_user(self, username: str) -> bool:
+        """Create a new user with a starting balance"""
+        try:
+            response = requests.post(
+                f"{self.server_url}/users/create",
+                json={'username': username}
+            )
+            if response.status_code == 201:
+                print(f"User '{username}' created successfully with starting balance of $100.00")
+                return True
+            else:
+                print(f"Failed to create user: {response.text}")
+                return False
+        except requests.exceptions.ConnectionError:
+            print("Error: Could not connect to the server. Make sure it's running.")
+            return False
 
 @click.group()
 @click.option('--server', default='http://localhost:5000', help='Server URL')
@@ -126,8 +203,28 @@ def show_balances(ctx):
     """Show all account balances"""
     balances = ctx.obj['cli'].print_balances()
     if balances:
-        for account, balance in balances.items():
-            print(f"{account}: ${balance:.2f}")
+        print("\n" + "=" * 40)
+        print("💰 USER BALANCES")
+        print("=" * 40)
+        
+        if not balances:
+            print("No users found. Create users with 'create-user' command.")
+        else:
+            # Find the longest username for formatting
+            max_len = max([len(name) for name in balances.keys()]) if balances else 0
+            
+            # Sort by username
+            for account in sorted(balances.keys()):
+                balance = balances[account]
+                # Add color indicators based on balance
+                if balance > 0:
+                    indicator = "🟢"  # green circle
+                else:
+                    indicator = "🔴"  # red circle
+                    
+                print(f"{indicator} {account.ljust(max_len + 2)}${balance:.2f}")
+                
+        print("=" * 40)
 
 @cli.command()
 @click.pass_context
@@ -142,24 +239,54 @@ def show_invalid(ctx):
         print("No invalid transactions found")
         return
         
-    print("\nInvalid Transactions:")
-    for tx in invalid['invalid_transactions']:
-        print(f"- {tx['source']} -> {tx['recipient']} (${tx['amount']}): {tx.get('validation_error', 'Unknown error')}")
+    print("\n" + "=" * 60)
+    print(f"🚫 INVALID TRANSACTIONS: {len(invalid['invalid_transactions'])}")
+    print("=" * 60)
+    
+    for i, tx in enumerate(invalid['invalid_transactions'], 1):
+        print(f"\n{i}. Transaction Details:")
+        print(f"   Source:      {tx['source']}")
+        print(f"   Recipient:   {tx['recipient']}")
+        print(f"   Amount:      ${float(tx['amount']):.2f}")
+        if 'timestamp' in tx:
+            from datetime import datetime
+            timestamp = datetime.fromtimestamp(tx['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+            print(f"   Timestamp:   {timestamp}")
+        print(f"   Error:       {tx.get('validation_error', 'Unknown error')}")
+        print(f"   " + "-" * 56)
+    
+    print("\n" + "=" * 60)
 
 @cli.command()
 @click.pass_context
 def reset(ctx):
     """Reset the blockchain"""
-    if click.confirm('Are you sure you want to reset the blockchain? This will delete all blocks and start over.'):
+    if click.confirm('Are you sure you want to reset the blockchain? This will delete all blocks, transactions, and user balances.'):
+        print("\nResetting blockchain...")
         if ctx.obj['cli'].reset_blockchain():
-            print("Blockchain reset successfully")
+            print("✓ SUCCESS: Blockchain has been reset to genesis state")
+            print("All blocks, transactions, and user balances have been cleared.")
+            print("You will need to create new users again with the 'create-user' command.")
         else:
-            print("Failed to reset blockchain")
+            print("✗ ERROR: Failed to reset blockchain")
 
 @cli.command()
-def export(ctx):
-    """Export functionality has been removed"""
-    print("Export functionality has been removed")
+@click.argument('filepath')
+@click.pass_context
+def export(ctx, filepath):
+    """Export blockchain data to a JSON file"""
+    ctx.obj['cli'].export_blockchain(filepath)
+
+@cli.command()
+@click.argument('username')
+@click.pass_context
+def create_user(ctx, username):
+    """Create a new user with starting balance"""
+    print(f"Creating new user '{username}'...")
+    if ctx.obj['cli'].create_user(username):
+        print("✓ User created with starting balance of $100.00")
+    else:
+        print("✗ Failed to create user - user may already exist or server error occurred")
 
 @cli.command()
 @click.pass_context
@@ -168,19 +295,33 @@ def show_pending(ctx):
     response = requests.get(f"{ctx.obj['cli'].server_url}/pending")
     if response.status_code == 200:
         transactions = response.json()
+        
+        print("\n" + "=" * 60)
+        print("⏳ PENDING TRANSACTIONS")
+        print("=" * 60)
+        
         if not transactions:
-            click.echo('No pending transactions')
-            return
+            print("No pending transactions found")
+        else:
+            print(f"Found {len(transactions)} transaction{'s' if len(transactions) != 1 else ''} waiting to be added to a block\n")
             
-        click.echo('Pending Transactions:')
-        click.echo('-' * 60)
-        for tx in transactions:
-            click.echo(f"From: {tx['source']} -> To: {tx['recipient']} | Amount: ${tx['amount']:.2f}")
-        click.echo('-' * 60)
-        click.echo(f'Total pending transactions: {len(transactions)}')
+            for i, tx in enumerate(transactions, 1):
+                print(f"{i}. Transaction Details:")
+                print(f"   Source:      {tx['source']}")
+                print(f"   Recipient:   {tx['recipient']}")
+                print(f"   Amount:      ${float(tx['amount']):.2f}")
+                if 'timestamp' in tx:
+                    from datetime import datetime
+                    timestamp = datetime.fromtimestamp(tx['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+                    print(f"   Timestamp:   {timestamp}")
+                print(f"   " + "-" * 56)
+        
+        print("\nThese transactions will be added to a new block when there are 3 transactions.")
+        print("=" * 60)
     else:
-        click.echo('Error fetching pending transactions')
-        click.echo(response.json().get('error', 'Unknown error'))
+        print("✗ Error fetching pending transactions")
+        print(f"Server response: {response.text}")
+        print("Make sure the blockchain server is running.")
 
 if __name__ == '__main__':
     cli(obj={})
