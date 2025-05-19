@@ -30,8 +30,8 @@
 
 1. Clone the repository and navigate to the project directory:
    ```bash
-   git clone https://github.com/organization/blockchain-workshop.git
-   cd blockchain-workshop
+   git clone https://github.com/debangeedas/DBP_2025.git
+   cd DBP_2025\blockchain-workshop
    ```
 
 2. Create a virtual environment:
