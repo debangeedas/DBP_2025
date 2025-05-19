@@ -3,6 +3,36 @@ import requests
 import json
 from typing import Optional, Dict, Any, List
 
+class AliasedGroup(click.Group):
+    def format_commands(self, ctx, formatter):
+        # Group commands by callback
+        rows = []
+        seen = set()
+        for cmd_name, cmd in self.commands.items():
+            if cmd.callback is None:
+                continue
+            # Find all names for this callback (short and long)
+            if id(cmd.callback) in seen:
+                continue
+            aliases = [name for name, c in self.commands.items() if c.callback == cmd.callback]
+            seen.add(id(cmd.callback))
+            # Show all aliases comma-separated, description from the first
+            rows.append((", ".join(aliases), cmd.get_short_help_str()))
+        if rows:
+            with formatter.section('Commands'):
+                formatter.write_dl(rows)
+
+# CLI command aliases mapping:
+# create-user      -> cu
+# add-transaction  -> at
+# show-chain       -> sc
+# show-block       -> sb
+# show-balances    -> bal
+# show-invalid     -> si
+# show-pending     -> sp
+# reset            -> r
+# export           -> ex
+
 class BlockchainCLI:
     def __init__(self, server_url='http://localhost:5000'):
         self.server_url = server_url
@@ -160,7 +190,7 @@ class BlockchainCLI:
             print("Error: Could not connect to the server. Make sure it's running.")
             return False
 
-@click.group()
+@click.group(cls=AliasedGroup)
 @click.option('--server', default='http://localhost:5000', help='Server URL')
 @click.pass_context
 def cli(ctx, server):
@@ -168,7 +198,7 @@ def cli(ctx, server):
     ctx.ensure_object(dict)
     ctx.obj['cli'] = BlockchainCLI(server)
 
-@cli.command()
+@cli.command('add-transaction')
 @click.argument('source')
 @click.argument('recipient')
 @click.argument('amount', type=float)
@@ -180,7 +210,9 @@ def add_transaction(ctx, source, recipient, amount):
     else:
         print("Failed to add transaction")
 
-@cli.command()
+cli.add_command(add_transaction, 'at')
+
+@cli.command('show-chain')
 @click.pass_context
 def show_chain(ctx):
     """Show the entire blockchain"""
@@ -188,7 +220,9 @@ def show_chain(ctx):
     if chain:
         print(json.dumps(chain, indent=2))
 
-@cli.command()
+cli.add_command(show_chain, 'sc')
+
+@cli.command('show-block')
 @click.argument('index', type=int)
 @click.pass_context
 def show_block(ctx, index):
@@ -197,7 +231,9 @@ def show_block(ctx, index):
     if block:
         print(json.dumps(block, indent=2))
 
-@cli.command()
+cli.add_command(show_block, 'sb')
+
+@cli.command('show-balances')
 @click.pass_context
 def show_balances(ctx):
     """Show all account balances"""
@@ -226,7 +262,10 @@ def show_balances(ctx):
                 
         print("=" * 40)
 
-@cli.command()
+cli.add_command(show_balances, 'bal')
+
+
+@cli.command('show-invalid')
 @click.pass_context
 def show_invalid(ctx):
     """Show all invalid transactions with their error messages"""
@@ -257,7 +296,9 @@ def show_invalid(ctx):
     
     print("\n" + "=" * 60)
 
-@cli.command()
+cli.add_command(show_invalid, 'si')
+
+@cli.command('reset')
 @click.pass_context
 def reset(ctx):
     """Reset the blockchain"""
@@ -270,14 +311,18 @@ def reset(ctx):
         else:
             print("✗ ERROR: Failed to reset blockchain")
 
-@cli.command()
+cli.add_command(reset, 'r')
+
+@cli.command('export')
 @click.argument('filepath')
 @click.pass_context
 def export(ctx, filepath):
     """Export blockchain data to a JSON file"""
     ctx.obj['cli'].export_blockchain(filepath)
 
-@cli.command()
+cli.add_command(export, 'ex')
+
+@cli.command('create-user')
 @click.argument('username')
 @click.pass_context
 def create_user(ctx, username):
@@ -288,7 +333,9 @@ def create_user(ctx, username):
     else:
         print("✗ Failed to create user - user may already exist or server error occurred")
 
-@cli.command()
+cli.add_command(create_user, 'cu')
+
+@cli.command('show-pending')
 @click.pass_context
 def show_pending(ctx):
     """Show all valid transactions waiting to be added to a block"""
@@ -322,6 +369,8 @@ def show_pending(ctx):
         print("✗ Error fetching pending transactions")
         print(f"Server response: {response.text}")
         print("Make sure the blockchain server is running.")
+
+cli.add_command(show_pending, 'sp')
 
 if __name__ == '__main__':
     cli(obj={})

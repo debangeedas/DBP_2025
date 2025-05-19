@@ -3,6 +3,33 @@
 ## Overview
 The Blockchain CLI provides a command-line interface to interact with the blockchain server. All commands support the `--help` flag to display usage information.
 
+**Tip:**
+- In **Windows PowerShell**, use `./bcli` or `.\bcli` (dot-slash or dot-backslash) to run the CLI batch file, e.g., `.\bcli sc`. This is because PowerShell does not search the current directory for scripts by default.
+- In **Windows Command Prompt**, you can use `bcli` directly, e.g., `bcli sc`.
+- On **Mac/Linux**, use the full Python command or set up an alias as described in the setup instructions.
+
+
+**Command Reference:**
+
+| Short | Long            | Description                                      |
+|:-----:|:---------------|:-------------------------------------------------|
+| cu    | create-user     | Create a new user with starting balance          |
+| at    | add-transaction | Add a new transaction                            |
+| sc    | show-chain      | Show the entire blockchain                       |
+| sb    | show-block      | Show a specific block                            |
+| bal   | show-balances   | Show all account balances                        |
+| si    | show-invalid    | Show all invalid transactions with errors        |
+| sp    | show-pending    | Show all valid transactions waiting for a block  |
+| r     | reset           | Reset the blockchain                             |
+| ex    | export          | Export blockchain data to a JSON file            |
+
+**Tip:**
+- Use the **short form** (e.g., `bcli cu alice`) for speed and convenience, especially during interactive use or quick testing.
+- Use the **long form** (e.g., `bcli create-user alice`) for clarity in scripts, documentation.
+
+All examples below show both formats for your reference.
+
+
 ## User Management
 
 ### Creating New Users
@@ -10,20 +37,20 @@ Users must be explicitly created before they can participate in transactions. Ea
 
 **Usage:**
 ```bash
-python -m cli.cli create-user <username>
+bcli cu <username>
 ```
 
 **Example:**
 ```bash
 # Create users named 'alice' and 'bob'
-python -m cli.cli create-user alice
-python -m cli.cli create-user bob
+bcli cu alice
+bcli cu bob
 ```
 
 ### Viewing User Balances
 Check the current balance of all users:
 ```bash
-python -m cli.cli show-balances
+bcli bal
 ```
 
 Output example:
@@ -43,13 +70,13 @@ Add a new transaction to the blockchain. Both the sender and recipient must exis
 
 **Usage:**
 ```bash
-python -m cli.cli add-transaction <source> <recipient> <amount>
+bcli at <source> <recipient> <amount>
 ```
 
 **Example:**
 ```bash
 # Send 10.0 from alice to bob
-python -m cli.cli add-transaction alice bob 10.0
+bcli at alice bob 10.0
 ```
 
 **Note:** If either the source or recipient user doesn't exist, the transaction will fail and be logged as an invalid transaction.
@@ -59,7 +86,7 @@ Display the entire blockchain with all transactions.
 
 **Usage:**
 ```bash
-python -m cli.cli show-chain
+bcli show-chain
 ```
 
 ### View a Block
@@ -67,12 +94,12 @@ Display a specific block by its index.
 
 **Usage:**
 ```bash
-python -m cli.cli show-block <index>
+bcli sb <index>
 ```
 
 **Example:**
 ```bash
-python -m cli.cli show-block 1
+bcli sb 1
 ```
 
 ### View Balances
@@ -80,7 +107,7 @@ Display the current balance of all accounts.
 
 **Usage:**
 ```bash
-python -m cli.cli show-balances
+bcli bal
 ```
 
 ### View Pending Transactions
@@ -88,7 +115,7 @@ python -m cli.cli show-balances
 Show transactions that are pending and not yet in a block.
 
 ```bash
-python -m cli.cli show-pending
+bcli sp
 ```
 
 ### View Invalid Transactions
@@ -96,7 +123,7 @@ python -m cli.cli show-pending
 Show all transactions that failed validation with their error messages.
 
 ```bash
-python -m cli.cli show-invalid
+bcli si
 ```
 
 ### Export Blockchain Data
@@ -105,12 +132,12 @@ Export the entire blockchain data (blocks, transactions, balances) to a JSON fil
 
 **Usage:**
 ```bash
-python -m cli.cli export <filepath>
+bcli ex <filepath>
 ```
 
 **Example:**
 ```bash
-python -m cli.cli export blockchain_export.json
+bcli ex blockchain_export.json
 ```
 
 The export includes:
@@ -125,44 +152,44 @@ The export includes:
 1. **Complete transaction flow**:
    ```bash
    # Create users first
-   python -m cli.cli create-user alice
-   python -m cli.cli create-user bob
-   python -m cli.cli create-user charlie
+   bcli cu alice
+   bcli cu bob
+   bcli cu charlie
    
    # Check initial balances
-   python -m cli.cli show-balances
+   bcli bal
    
    # Add some transactions
-   python -m cli.cli add-transaction alice bob 10.0
-   python -m cli.cli add-transaction bob charlie 5.0
+   bcli at alice bob 10.0
+   bcli at bob charlie 5.0
    
    # View the blockchain
-   python -m cli.cli show-chain
+   bcli show-chain
 
    # View a specific block (1-indexed)
-   python -m cli.cli show-block 2
+   bcli sb 2
    
    # Check updated balances
-   python -m cli.cli show-balances
+   bcli bal
    
    # View pending transactions
-   python -m cli.cli show-pending
+   bcli sp
 
    # Export blockchain data
-   python -m cli.cli export blockchain_data.json
+   bcli ex blockchain_data.json
    ```
 
 2. **Error handling examples**:
    ```bash
    # Non-existent user transaction (will fail and appear in invalid transactions)
-   python -m cli.cli add-transaction alice dave 10.0
+   bcli at alice dave 10.0
    
    # Insufficient funds transaction
-   python -m cli.cli add-transaction alice bob 1000.0
+   bcli at alice bob 1000.0
    
    # View invalid transactions
-   python -m cli.cli show-invalid
+   bcli si
    
    # Reset the blockchain
-   python -m cli.cli reset
+   bcli r
    ```
