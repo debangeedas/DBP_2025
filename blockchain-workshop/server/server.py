@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from .blockchain import Blockchain
+from .transaction import Transaction
 
 app = Flask(__name__)
 blockchain = Blockchain()
@@ -19,7 +20,16 @@ def new_transaction():
     )
     
     if not success:
-        return 'Invalid transaction', 400
+        # Find the last invalid transaction and return its error message
+        if blockchain.invalid_transactions:
+            last_tx = blockchain.invalid_transactions[-1]
+            error_msg = last_tx.validation_error
+            return jsonify({
+                'error': 'Invalid transaction',
+                'reason': error_msg
+            }), 400
+        else:
+            return 'Invalid transaction (unknown reason)', 400
     
     return 'Transaction added successfully', 201
 
@@ -60,8 +70,45 @@ def reset():
     return 'Blockchain reset successfully', 200
 
 @app.route('/export', methods=['POST'])
-def export_transactions():
-    return 'Export functionality has been removed', 400
+def export_blockchain():
+    data = request.get_json()
+    if not data or 'filepath' not in data:
+        return jsonify({'error': 'Filepath is required'}), 400
+        
+    filepath = data['filepath']
+    
+    # Ensure the filepath is valid and has proper extension
+    if not filepath.endswith('.json'):
+        filepath += '.json'
+        
+    success = blockchain.export_blockchain(filepath)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'message': f'Blockchain data exported successfully to {filepath}',
+            'filepath': filepath
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to export blockchain data to {filepath}'
+        }), 500
+
+@app.route('/users/create', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    if not data or 'username' not in data:
+        return 'Username is required', 400
+        
+    username = data['username']
+    if not username or not isinstance(username, str):
+        return 'Username must be a non-empty string', 400
+        
+    if blockchain.create_user(username):
+        return 'User created successfully', 201
+    else:
+        return 'Failed to create user. User may already exist.', 400
 
 def load_transactions_from_csv():
     """This function is kept for compatibility but returns an empty list"""
