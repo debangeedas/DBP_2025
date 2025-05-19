@@ -50,43 +50,17 @@
    ```bash
    pip install -r requirements.txt
    ```
-
-4. Run the server:
-   ```bash
-   python -m server.server
-   ```
-
-5. In a new terminal window (with the virtual environment activated), use the CLI:
-   ```bash
-   python -m cli.cli --help
-   ```
-
+   
 ## Running the Application
 
-1. Start the server in one terminal:
+1. Run the server:
    ```bash
    python -m server.server
    ```
 
-2. In another terminal, use the CLI to interact with the blockchain:
+2. In a new terminal window (with the virtual environment activated), use the CLI (detailed instructions are given in the file cli_guide.md):
    ```bash
-   # Add a transaction
-   python -m cli.cli add-transaction Alice Bob 10.0
-
-   # View the blockchain
-   python -m cli.cli show-chain
-
-   # View account balances
-   python -m cli.cli show-balances
-
-   # View invalid transactions
-   python -m cli.cli show-invalid
-
-   # Export transactions to CSV
-   python -m cli.cli export transactions.csv
-
-   # Reset the blockchain
-   python -m cli.cli reset
+   python -m cli.cli --help
    ```
 
 ## Troubleshooting
