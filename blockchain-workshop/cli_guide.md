@@ -80,21 +80,28 @@ python -m cli.cli show-pending
 
 1. **Create a simple transaction flow**:
    ```bash
-   # Reset the blockchain
-   python -m cli.cli reset
-   
+      
    # Add some transactions
    python -m cli.cli add-transaction Alice Bob 10.0
    python -m cli.cli add-transaction Bob Charlie 5.0
    
    # View the blockchain
    python -m cli.cli show-chain
+
+   # View a specific block (1-indexed)
+   python -m cli.cli show-block 1
    
    # Check balances
    python -m cli.cli show-balances
    
    # View pending transactions
    python -m cli.cli show-pending
+
+   # View invalid transactions
+   python -m cli.cli show-invalid
+
+   # Reset the blockchain
+   python -m cli.cli reset
    ```
 
 2. **Handle insufficient funds**:
@@ -102,11 +109,3 @@ python -m cli.cli show-pending
    # This will fail if Alice doesn't have enough balance
    python -m cli.cli add-transaction Alice Bob 1000.0
    ```
-
-## Notes
-
-- The blockchain automatically creates a new block after every 3 transactions.
-- The genesis block is created automatically when the blockchain is initialized.
-- All transactions are validated before being added to the blockchain.
-- Users are automatically created with a balance of $100 when they first appear as a sender.
-- The system no longer uses file I/O - all data is stored in memory while the server is running.
