@@ -59,9 +59,36 @@
    ```
 
 2. In a new terminal window (with the virtual environment activated), use the CLI (detailed instructions are given in the file cli_guide.md):
-   ```bash
-   python -m cli.cli --help
-   ```
+   - **Windows (PowerShell):**
+     ```bash
+     .\bcli --help
+     ```
+     (If using Command Prompt, you can use `bcli --help`)
+
+   - **Mac/Linux:**
+     ```bash
+     python -m cli.cli --help
+     ```
+
+   > **Tip:** On Windows, use the `bcli` command for all CLI operations. This batch script is located in the project root and wraps the full Python command for you. On Mac/Linux, you can optionally create an alias like `alias bcli='python -m cli.cli'` in your shell profile for convenience.
+
+   You can now use `bcli` commands in your terminal. Each command has a short and long form:
+
+| Short Form      | Long Form            | Example (Short)      | Example (Long)                |
+|:---------------:|:--------------------|:---------------------|:------------------------------|
+| cu              | create-user         | bcli cu alice        | bcli create-user alice        |
+| at              | add-transaction     | bcli at alice bob 10 | bcli add-transaction alice bob 10 |
+| sc              | show-chain          | bcli sc              | bcli show-chain               |
+| sb              | show-block          | bcli sb 1            | bcli show-block 1             |
+| bal             | show-balances       | bcli bal             | bcli show-balances            |
+| si              | show-invalid        | bcli si              | bcli show-invalid             |
+| sp              | show-pending        | bcli sp              | bcli show-pending             |
+| r               | reset               | bcli r               | bcli reset                    |
+| ex              | export              | bcli ex              | bcli export                   |
+
+**Tip:**
+- Use the short form for speed and convenience (interactive use).
+- Use the long form for clarity (scripts, docs, teaching).
 
 ## How it works
 
