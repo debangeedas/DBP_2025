@@ -1,0 +1,22 @@
+{
+    "nodes": [
+        {
+            "host": "localhost",
+            "port": 5000,
+            "name": "Node localhost:5000",
+            "node_type": "full"
+        },
+        {
+            "host": "localhost",
+            "port": 5001,
+            "name": "Node localhost:5001",
+            "node_type": "miner"
+        },
+        {
+            "host": "localhost",
+            "port": 5002,
+            "name": "Miner Node",
+            "node_type": "full"
+        }
+    ]
+}

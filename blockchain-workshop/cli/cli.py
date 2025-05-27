@@ -1,7 +1,9 @@
 import click
 import requests
 import json
-from typing import Optional, Dict, Any, List
+from typing import Optional
+
+SERVER_URL = 'http://131.226.220.69:5000'
 
 class AliasedGroup(click.Group):
     def format_commands(self, ctx, formatter):
@@ -34,7 +36,7 @@ class AliasedGroup(click.Group):
 # export           -> ex
 
 class BlockchainCLI:
-    def __init__(self, server_url='http://localhost:5000'):
+    def __init__(self, server_url=SERVER_URL):
         self.server_url = server_url
 
     def add_transaction(self, source: str, recipient: str, amount: float) -> bool:
@@ -191,7 +193,7 @@ class BlockchainCLI:
             return False
 
 @click.group(cls=AliasedGroup)
-@click.option('--server', default='http://localhost:5000', help='Server URL')
+@click.option('--server', default=SERVER_URL, help='Server URL')
 @click.pass_context
 def cli(ctx, server):
     """Blockchain CLI Tool"""

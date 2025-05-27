@@ -1,0 +1,5 @@
+flask==2.0.1
+werkzeug==2.0.1
+requests==2.26.0
+pycryptodome==3.10.1
+argparse==1.4.0
