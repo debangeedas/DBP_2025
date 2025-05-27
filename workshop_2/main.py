@@ -33,6 +33,7 @@ def parse_args():
     
     # Network configuration
     parser.add_argument('--peers', nargs='*', help='List of peer nodes to connect to')
+    parser.add_argument('--external-ip', help='External/public IP address of this node (for servers with multiple IPs)')
     
     # UI options
     parser.add_argument('--cli', action='store_true', help='Run in CLI mode instead of API server')
@@ -74,7 +75,8 @@ def main():
             blockchain=blockchain,
             miner_mode=is_miner,
             mining_interval=args.mining_interval,
-            status_cache_time=60  # Cache node status for 60 seconds
+            status_cache_time=60,  # Cache node status for 60 seconds
+            external_ip=args.external_ip  # Pass the external IP if specified
         )
         
         # Connect to peers if specified

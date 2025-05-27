@@ -22,7 +22,7 @@ class Node:
     
     def __init__(self, host: str, port: int, blockchain: Optional[Blockchain] = None, 
                  miner_mode: bool = False, mining_interval: int = 30, config_file: str = 'nodes_config.json',
-                 status_cache_time: int = 60) -> None:
+                 status_cache_time: int = 60, external_ip: str = None) -> None:
         """
         Initialize a blockchain node.
         
@@ -34,7 +34,22 @@ class Node:
             mining_interval: Seconds between mining operations if in miner mode
             config_file: Path to the node configuration file
             status_cache_time: How long (in seconds) to cache node status before rechecking
+            external_ip: The public/external IP address of this node (used for identification)
         """
+        # Store the binding host separately from the identity host
+        self.binding_host = host
+        self.external_ip = external_ip
+        
+        # If binding to 0.0.0.0 but no external IP provided, try to detect it
+        if host == '0.0.0.0' and not external_ip:
+            try:
+                # Try to auto-detect external IP - this will only work if the machine has internet access
+                self.external_ip = self._detect_external_ip()
+                logger.info(f"Auto-detected external IP: {self.external_ip}")
+            except Exception as e:
+                logger.warning(f"Could not auto-detect external IP: {e}")
+                self.external_ip = None
+        
         self.host = self._normalize_host(host)
         self.port = port
         self.node_address = str(uuid.uuid4()).replace('-', '')
@@ -51,14 +66,65 @@ class Node:
         self.active_nodes = {}  # Dictionary to store active node status: {node_id: last_announcement_time}
         self.activity_timeout = 300  # Consider a node inactive if we haven't heard from it in 5 minutes
         
+        # Identity string for this node (used in logs and communication)
+        self.node_identity = f"{self.host}:{self.port}"
+        logger.info(f"Initialized node with identity: {self.node_identity}")
+        if self.external_ip:
+            logger.info(f"Node will identify using external IP: {self.external_ip}")
+        
         # No longer needed for periodic announcements
         pass
         
+    def _detect_external_ip(self) -> str:
+        """Attempt to detect the external IP address of this node."""
+        # Try several services to detect external IP
+        ip_services = [
+            "https://api.ipify.org",
+            "https://ifconfig.me/ip",
+            "https://ipinfo.io/ip"
+        ]
+        
+        for service in ip_services:
+            try:
+                response = requests.get(service, timeout=3)
+                if response.status_code == 200:
+                    ip = response.text.strip()
+                    if ip and len(ip) < 45:  # Basic validation to ensure it looks like an IP
+                        return ip
+            except Exception as e:
+                logger.debug(f"Failed to get IP from {service}: {e}")
+                continue
+                
+        # If external detection fails, try to use a local interface IP
+        try:
+            # Get all non-loopback IPv4 addresses
+            import socket
+            hostname = socket.gethostname()
+            ip_list = socket.gethostbyname_ex(hostname)[2]
+            
+            # Filter out loopback addresses
+            external_ips = [ip for ip in ip_list if not ip.startswith('127.')]
+            if external_ips:
+                return external_ips[0]
+        except Exception as e:
+            logger.debug(f"Failed to get local IP: {e}")
+            
+        raise Exception("Could not detect external IP address")
+    
     def _normalize_host(self, host: str) -> str:
         """Normalize host addresses for consistent identification."""
-        # Handle localhost, 127.0.0.1, 0.0.0.0 consistently
-        if host in ['localhost', '127.0.0.1', '0.0.0.0']:
+        # For binding purposes, 0.0.0.0 is used to listen on all interfaces
+        # But for node identity, we need to use the actual external IP
+        
+        # Only normalize loopback addresses
+        if host in ['localhost', '127.0.0.1']:
             return 'localhost'
+        
+        # 0.0.0.0 is a special case - when a node uses 0.0.0.0 for binding,
+        # we should use its actual IP address for identification
+        if host == '0.0.0.0' and hasattr(self, 'external_ip') and self.external_ip:
+            return self.external_ip
+            
         return host
         
     def _load_registered_nodes(self) -> List[Dict[str, Any]]:

@@ -103,18 +103,63 @@ When running the blockchain on external servers, you must:
 1. Use the server's actual IP address or hostname, not `localhost` or `127.0.0.1`
 2. Configure the firewall to allow traffic on the ports you're using
 3. Use `0.0.0.0` as the host to allow external connections to your node
+4. Specify your server's public IP with `--external-ip` for proper node identification
 
-### Step 1: Start the First Node
+### Step 1: Start the First Node (Server A)
 
 Run the first node on your server with:
 
-```
-python main.py --host 0.0.0.0 --port 5000 --node-type full --difficulty 4
+```bash
+python main.py --host 0.0.0.0 --port 5000 --node-type full --difficulty 4 --external-ip SERVER_A_PUBLIC_IP
 ```
 
-This makes your node accessible from the internet at `http://YOUR_SERVER_IP:5000`
+This makes your node accessible from the internet at `http://SERVER_A_PUBLIC_IP:5000`
 
-### Step 2: Start a Miner Node
+### Step 2: Start the Second Node (Server B)
+
+On your second server, connect to the first node by specifying it as a peer:
+
+```bash
+python main.py --host 0.0.0.0 --port 5000 --node-type full --difficulty 4 --external-ip SERVER_B_PUBLIC_IP --peers http://SERVER_A_PUBLIC_IP:5000
+```
+
+### Troubleshooting Peer Connections
+
+If nodes are not connecting properly, verify:
+
+1. **Firewall settings**: Ensure ports 5000 is open on both servers
+
+   ```bash
+   # On Ubuntu/Debian
+   sudo ufw allow 5000/tcp
+   
+   # On CentOS/RHEL
+   sudo firewall-cmd --permanent --add-port=5000/tcp
+   sudo firewall-cmd --reload
+   ```
+
+2. **Correct IP usage**: 
+   - Always use the server's public IP address for the `--external-ip` parameter
+   - Use full URLs with `http://` prefix for the `--peers` parameter
+   - Never use localhost, 127.0.0.1, or 0.0.0.0 in the peers list
+
+3. **Network Connectivity**: Test basic connectivity between servers
+
+   ```bash
+   # From Server A, test connection to Server B
+   ping SERVER_B_PUBLIC_IP
+   curl http://SERVER_B_PUBLIC_IP:5000/chain
+   ```
+
+4. **Check Configuration File**: After starting nodes, verify the peers are correctly saved
+
+   ```bash
+   cat nodes_config.json
+   ```
+   
+   The file should contain entries with the correct public IPs, not local addresses.
+
+### Step 3: Start a Miner Node
 
 On the same server or a different one, start a miner node:
 
