@@ -17,6 +17,54 @@
             "port": 5002,
             "name": "Miner Node",
             "node_type": "full"
+        },
+        {
+            "host": "131.226.220.72",
+            "port": 5000,
+            "name": "Node 131.226.220.72:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.69",
+            "port": 5000,
+            "name": "Node 131.226.220.69:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.77",
+            "port": 5000,
+            "name": "Node 131.226.220.77:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.74",
+            "port": 5000,
+            "name": "Node 131.226.220.74:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.78",
+            "port": 5000,
+            "name": "Node 131.226.220.78:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.76",
+            "port": 5000,
+            "name": "Node 131.226.220.76:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.75",
+            "port": 5000,
+            "name": "Node 131.226.220.75:5000",
+            "node_type": "miner"
+        },
+        {
+            "host": "131.226.220.73",
+            "port": 5000,
+            "name": "Node 131.226.220.73:5000",
+            "node_type": "miner"
         }
     ]
 }
